@@ -1,0 +1,9 @@
+---
+layout: post
+title:  "init"
+date:   2016-12-14 17:08:04 +0100
+categories: site
+---
+```bash
+cat /dev/urandom | hexdump
+```
