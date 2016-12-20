@@ -1,0 +1,51 @@
+---
+layout: post
+title:  "pg_dump and restore a db in a container"
+date:   2016-12-20 12:00:00 +0100
+categories: docker postgres
+---
+I'm running containerized ManageIQ appliances for development.
+To dump your postgres db running inside such a container you simply exec `pg_dump`.
+In my case not directly, because `pg_dump` is a some obscure place inside the container.
+
+```bash
+docker exec miq_latest bash -lc 'pg_dump --format custom vmdb_production' > /tmp/pg_dump.pgdata
+```
+
+Start a vanilla postgres container to host your development db:
+
+```bash
+docker run --name miq_pg -e POSTGRES_USER=root -e POSTGRES_DB=vmdb_development -d -p 5432:5432 postgres:9.5
+```
+
+Now you can restore the dump
+
+```bash
+docker exec -i miq_pg pg_restore --dbname=vmdb_development --verbose --clean < /tmp/pg_dump.pgdata
+```
+
+### Beware Mr. T
+
+You might be used to run `docker exec -ti` - but don't do this to dump a db. The `-t, --tty` flag 
+will also append a carriage return character. 
+
+```bash
+❯ head /tmp/pg_dump.pgdata_dos | head -1 | cat -A
+PGDMP^A...@9.5.2^@M-r^M$
+
+❯ head /tmp/pg_dump.pgdata | head -1 | cat -A
+PGDMP^A...@9.5.2^@M-r$
+```
+
+Better yet, `pg_restore` will just segfault on the wrong format
+
+```bash
+❯ docker exec -i miq_pg pg_restore --dbname=vmdb_development --verbose --clean < /tmp/pg_dump.pgdata_dos
+
+❯ echo $?
+139
+
+❯ docker run --rm -ti --link=miq_pg -v /tmp:/tmp postgres:9.5 bash
+root@9ce662730c82:/# pg_restore --dbname=vmdb_development --verbose --clean /tmp/pg_dump.pgdata_dos
+Segmentation fault
+```
