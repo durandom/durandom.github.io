@@ -4,7 +4,7 @@ email:       hild@b4mad.net
 author:      Marcel Hild
 description: "old school hacker, zombie and daemon slayer"
 baseurl:     ""
-url:         "https://durandom.de"
+url:         "http://durandom.de"
 date_format: "%b %-d, %Y"
 
 # Google services
